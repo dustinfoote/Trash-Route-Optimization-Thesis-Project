@@ -139,7 +139,7 @@ for numpaths=1:m
    end
     
 end
-
+%%
 numpickups=[length(route1),length(route2),length(route3),length(route4),length(route5)];
 conspickupsmin=min(numpickups); 
 conspickupsmax=max(numpickups);
@@ -147,6 +147,7 @@ conspickupsmax=max(numpickups);
 tsp.Constraints.conspickupsmin = conspickupsmin>=33;% sets K, minimum pickups per vehicle
 tsp.Constraints.conspickupsmax = conspickupsmax<=63;% sets L, maximum pickups per vehicle
 
+%%
 routesvector=[route1;route2;route3;route4;route5];
 u=zeros(totaltrips,1);
 u(1)=1;
@@ -173,7 +174,8 @@ for order=2:totaltrips     % determines u vector of elements=pickup # in subtour
         cnt5=cnt5+1;
     end
 end
-        
+
+
 L=63; %conspickupsmax;
 K=33; %conspickupsmin;
 
@@ -202,7 +204,7 @@ end
 tsp.Constraints.consmax=consmax<=L-1;
 tsp.Constraints.consmin=consmin>=2;
 
-
+%%
 conSECs=optimconstr(nstops-1,nstops);
 
 for ii=2:nstops % determines if trip between i and j exists for i>=2, 1=<j=<nstops
@@ -229,7 +231,7 @@ end
 tsp.Constraints.conSECs=conSECs<=L-1;
 
 
-%%% Solve the Initial Problem
+%% Solve the Initial Problem
 opts = optimoptions('intlinprog','Display','off');
 tspsol = solve(tsp,'options',opts)
 
