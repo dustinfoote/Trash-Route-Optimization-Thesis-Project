@@ -6,8 +6,8 @@ DATA=DATA.DATA;
 
 %LINE BELOW IS NEW
 DATA=DATA(1:17,1:17);
-Longitude=Longitude(1:17);
-Latitude=Latitude(1:17);
+%Longitude=Longitude(1:17);
+%Latitude=Latitude(1:17);
 
 nStops = length(DATA); % you can use any number, but the problem size scales as N^2
 nDLs=nStops-1;
@@ -81,16 +81,17 @@ for i=2:nStops
             xji=find(idxs(:,2)==i & idxs(:,1)==j);
             ui=nCombs+i-1;
             uj=nCombs+j-1;
-            A(counter,[xij,xji,ui,uj])=[L,L-2,1,-2];
+            A(counter,[xij,xji,ui,uj])=[L,L-2,1,-1]; % On March 11 changed from -2 to -1 for u_j
             b(counter)=L-1;
             counter=counter+1;
         end
     end
 end
 %% Constraint 8
-for i=1:nDLs
     xstart=find(idxs(:,1)==1);
     xend=find(idxs(:,2)==1);
+    for i=1:nDLs
+
     A(counter,[xstart(i),xend(i)])=[1 1];
     b(counter)=1;
     counter=counter+1;
