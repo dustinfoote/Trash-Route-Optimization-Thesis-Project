@@ -1,11 +1,11 @@
 clear;clc;
-m=4; %number of salemen/vehicles
+m=1; %number of salemen/vehicles
 DATA=load('Final Distance Matrix.mat');
 DATA=DATA.DATA;
 [Longitude, Latitude] = readvars('Dual Litter Bins_Tempe_LatLong_Distance Matrix with Compactors +Depot.xlsx','Sheet','Sheet2','Range','B5:C243');
 
 %LINE BELOW IS NEW
-DATA=DATA(1:17,1:17);
+DATA=DATA([1,70:83],[1,70:83]);
 %Longitude=Longitude(1:17);
 %Latitude=Latitude(1:17);
 
@@ -56,8 +56,8 @@ end
 %% Constraint 6, 7
 A=zeros(2*nDLs+nDLs^2,nCombs+nDLs);
 b=zeros(2*nDLs+nDLs^2,1);
-L=6;
-K=2;
+L=14;
+K=4;
 cnter=nStops;
 for i=2:nStops
     x1i=find(idxs(:,1)==1 & idxs(:,2)==i);
@@ -111,14 +111,51 @@ x=intlinprog(f,intcon,A,b,Aeq,beq,lb,ub);
 segments = find(x(1:nCombs)); % Get indices of lines on optimal path
 
 truetrips=idxs(segments',:);
-xplot=zeros(length(truetrips),1);
-yplot=zeros(length(truetrips),1);
+truetripscopy=truetrips;
+xplot=zeros(1,2);
+yplot=zeros(1,2);
+%%
+% figure;hold on;
+% for i=1:length(truetripscopy)
+%     xplot=[Latitude(truetripscopy(i,1)),Latitude(truetripscopy(i,2))];
+%     yplot=[Longitude(truetripscopy(i,1)),Longitude(truetripscopy(i,2))];
+%     plot(yplot,xplot,'b')
+% end
+% plot(Longitude,Latitude,'r*')
+% hold off
+
+
+%%
 figure;hold on;
-for i=1:length(truetrips)
+for h=1:m
+q=1;
+yplot(2)=0;
+while yplot(2)~=Longitude(1)
+    if q==1
+        i=find(truetrips(:,1)==1);
+        i=i(1);
+    else
+        i=find(truetrips(:,1)==nextDL);
+        i=i(1);
+    end
+    q=2;
     xplot=[Latitude(truetrips(i,1)),Latitude(truetrips(i,2))];
     yplot=[Longitude(truetrips(i,1)),Longitude(truetrips(i,2))];
-    plot(yplot,xplot,'b')
+    if h==1
+        plot(yplot,xplot,'b')    
+    elseif h==2
+        plot(yplot,xplot,'c')
+    elseif h==3
+        plot(yplot,xplot,'g')
+    elseif h==4
+        plot(yplot,xplot,'m')  
+    elseif h==5
+        plot(yplot,xplot,'k')  
+    end
+    nextDL=truetrips(i,2);
+    truetrips(i,:)=[];
+    
 end
-
+end
 plot(Longitude,Latitude,'r*')
 hold off
