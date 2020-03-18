@@ -1,12 +1,12 @@
 clear;clc;
-m=1; %number of salemen/vehicles
+m=2; %number of salemen/vehicles
 DATA=load('Final Distance Matrix.mat');
 DATA=DATA.DATA;
 DATACopy=DATA;
 [Longitude, Latitude] = readvars('Dual Litter Bins_Tempe_LatLong_Distance Matrix with Compactors +Depot.xlsx','Sheet','Sheet2','Range','B5:C243');
 
 %LINE BELOW IS NEW
-datanodes=[1,56,100,13,231]; % row vector, must always start with node 1
+datanodes=[1,56,100,13,231,88,99,200,66,44,133,156,180]; % row vector, must always start with node 1
 %DATA=DATA([1,5,76,108,223],[1,5,76,108,223]);
 Long=Longitude(datanodes);
 Lat=Latitude(datanodes);
@@ -70,8 +70,8 @@ end
 %% Constraint 6, 7
 A=zeros(2*nDLs+nDLs^2,nCombs+nDLs);
 b=zeros(2*nDLs+nDLs^2,1);
-L=10;
-K=1;
+L=8;
+K=4;
 cnter=nStops;
 for i=2:nStops
     x1i=find(idxs(:,1)==1 & idxs(:,2)==datanodes(i));
@@ -122,56 +122,58 @@ ub=ones(nCombs,1);
 x=intlinprog(f,intcon,A,b,Aeq,beq,lb,ub);
 
 %%
-segments = find(x(1:nCombs)); % Get indices of lines on optimal path
+segments = find(x(1:nCombs)<1.05 & x(1:nCombs)>.95); % Get indices of lines on optimal path
 
 truetrips=idxs(segments',:);
 truetripscopy=truetrips;
 xplot=zeros(1,2);
 yplot=zeros(1,2);
 %%
-figure;hold on;
-plot(Longitude,Latitude,'r*')
-plot(Long,Lat,'g*')
-for i=1:length(truetripscopy)
-    xplot=[Latitude(truetripscopy(i,1)),Latitude(truetripscopy(i,2))];
-    yplot=[Longitude(truetripscopy(i,1)),Longitude(truetripscopy(i,2))];
-    plot(yplot,xplot,'b')
-end
-
-hold off
+% figure;hold on;
+% plot(Longitude,Latitude,'r*')
+% plot(Long,Lat,'g*')
+% for i=1:length(truetripscopy)
+%     xplot=[Latitude(truetripscopy(i,1)),Latitude(truetripscopy(i,2))];
+%     yplot=[Longitude(truetripscopy(i,1)),Longitude(truetripscopy(i,2))];
+%     plot(yplot,xplot,'b')
+% end
+% 
+% hold off
 
 
 %%
-% figure;hold on;
-% for h=1:m
-% q=1;
-% yplot(2)=0;
-% while yplot(2)~=Longitude(1)
-%     if q==1
-%         i=find(truetrips(:,1)==1);
-%         i=i(1);
-%     else
-%         i=find(truetrips(:,1)==nextDL);
-%         i=i(1);
-%     end
-%     q=2;
-%     xplot=[Latitude(truetrips(i,1)),Latitude(truetrips(i,2))];
-%     yplot=[Longitude(truetrips(i,1)),Longitude(truetrips(i,2))];
-%     if h==1
-%         plot(yplot,xplot,'b')    
-%     elseif h==2
-%         plot(yplot,xplot,'c')
-%     elseif h==3
-%         plot(yplot,xplot,'g')
-%     elseif h==4
-%         plot(yplot,xplot,'m')  
-%     elseif h==5
-%         plot(yplot,xplot,'k')  
-%     end
-%     nextDL=truetrips(i,2);
-%     truetrips(i,:)=[];
-%     
-% end
-% end
-% plot(Longitude,Latitude,'r*')
-% hold off
+figure;hold on;
+plot(Longitude,Latitude,'r*')
+plot(Long,Lat,'g*')
+for h=1:m
+q=1;
+yplot(2)=0;
+while yplot(2)~=Longitude(1)
+    if q==1
+        i=find(truetrips(:,1)==1);
+        i=i(1);
+    else
+        i=find(truetrips(:,1)==nextDL);
+        i=i(1);
+    end
+    q=2;
+    xplot=[Latitude(truetrips(i,1)),Latitude(truetrips(i,2))];
+    yplot=[Longitude(truetrips(i,1)),Longitude(truetrips(i,2))];
+    if h==1
+        plot(yplot,xplot,'b')    
+    elseif h==2
+        plot(yplot,xplot,'c')
+    elseif h==3
+        plot(yplot,xplot,'g')
+    elseif h==4
+        plot(yplot,xplot,'m')  
+    elseif h==5
+        plot(yplot,xplot,'k')  
+    end
+    nextDL=truetrips(i,2);
+    truetrips(i,:)=[];
+    
+end
+end
+
+hold off
