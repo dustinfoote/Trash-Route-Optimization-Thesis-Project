@@ -13,13 +13,16 @@ compsData=load('DistComps - Compactors x DLs.mat');
 compsData=compsData.DistComps;
 [LongComps, LatComps] = readvars('Landfill_Compactors.xlsx','Sheet','Sheet1','Range','X67:Y86');
 
-DATA=[DATA,[10000*ones(1,length(compsData));compsData'];[10000*ones(length(compsData),1),compsData],10000*ones(length(compsData))-10000*eye(length(compsData))];
+DATA=[DATA,[10000*ones(1,length(compsData(:,1)));compsData'];[10000*ones(length(compsData(:,1)),1),compsData],10000*ones(length(compsData(:,1)))-10000*eye(length(compsData(:,1)))];
 %LINE BELOW IS NEW
 if fullscale==0
     datanodes=[1,randperm(238,20)+ones(1,20)]; % row vector, must always start with node 1
     %datanodes=[1,56,100,13,231,88,99,200,66,44,133,156,180]; % row vector, must always start with node 1
     Long=Longitude(datanodes);
     Lat=Latitude(datanodes);
+    for k=length(datanodes)
+        if datanodes(k)>239
+            activecomps=
 else
     for j=1:length(DATA)
         datanodes=[idxscomps,j];
@@ -33,14 +36,16 @@ nDLs=nStops-1;
 
 
 %%% Calculate Distances Between Points
-idxs1 = nchoosek(1:nStops,2);
+idxs1 = nchoosek(1:259,2);
 idxs1=[idxs1;idxs1(:,2),idxs1(:,1)]; 
 idxs=[];
 id=[];
 for p=1:nStops
     for w=1:nStops
+        if p~=w
 id=find(idxs1(:,1)==datanodes(p) & idxs1(:,2)==datanodes(w));
 idxs=[idxs;idxs1(id,:)];
+        end
 %id=find(idxs1(:,2)==datanodes(p) & idxs1(:,1)==datanodes(w)); 
 %idxs=[idxs;idxs1(id,:)];
     end
@@ -57,14 +62,11 @@ end
 
 f=[dist;zeros(2*nDLs,1)]; % concatenate f with zeros at the end to account for u at the end of x vector (length #nodes)
 
-% Aeq=zeros(2*nStops,nCombs+2*nDLs);
-% beq=zeros(2*nStops,1);
-% A=zeros(2*nDLs+nDLs^2,nCombs+2*nDLs);
-% b=zeros(2*nDLs+nDLs^2,1);
-Aeq=[];
-beq=[];
-A=[];
-b=[];
+Aeq=zeros(nDLs+2+activecomps,nCombs+2*nDLs);
+beq=zeros(nDLs+2+activecomps,1);
+A=zeros(5*nDLs+nDLs^2,nCombs+2*nDLs);
+b=zeros(5*nDLs+nDLs^2,1);
+
 
 %% Constraint 2
 Aeq(1,nCombs+2*nDLs)=zeros(1,nCombs+2*nDLs);

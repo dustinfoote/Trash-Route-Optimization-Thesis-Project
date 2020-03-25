@@ -1,7 +1,7 @@
 clear;clc;
-m=5; %number of salemen/vehicles
+m=4; %number of salemen/vehicles
 H=2; %number of DL stops b4 visiting compactor
-L=7;
+L=15;
 K=2;
 fullscale=0; % if problem is full scale, put 1, otherwise 0
 
@@ -13,17 +13,28 @@ compsData=load('DistComps - Compactors x DLs.mat');
 compsData=compsData.DistComps;
 [LongComps, LatComps] = readvars('Landfill_Compactors.xlsx','Sheet','Sheet1','Range','X67:Y86');
 
-DATA=[DATA,[10000*ones(1,length(compsData));compsData'];[10000*ones(length(compsData),1),compsData],10000*ones(length(compsData))-10000*eye(length(compsData))];
+DATA=[DATA,[10000*ones(1,length(compsData(:,1)));compsData'];[10000*ones(length(compsData(:,1)),1),compsData],10000*ones(length(compsData(:,1)))-10000*eye(length(compsData(:,1)))];
 %LINE BELOW IS NEW
 if fullscale==0
-    datanodes=[1,randperm(238,20)+ones(1,20)]; % row vector, must always start with node 1
+    datanodes=[1,randperm(238,20)+ones(1,20),248,254,251]; % row vector, must always start with node 1
     %datanodes=[1,56,100,13,231,88,99,200,66,44,133,156,180]; % row vector, must always start with node 1
     Long=Longitude(datanodes);
     Lat=Latitude(datanodes);
+    count=1;
+    activecomps=[];
+    for k=length(datanodes)
+        if datanodes(k)>239
+            activecomps(count)=datanodes(k);
+            count=count+1;
+        end
+    end
+    lenactivecomps=length(activecomps);
 else
     for j=1:length(DATA)
         datanodes=[idxscomps,j];
     end
+    activecomps=linspace(1,20,1);
+    lenactivecomps=length(activecomps);
 end
 %DATA=DATA([1,5,76,108,223],[1,5,76,108,223]);
 
@@ -33,14 +44,16 @@ nDLs=nStops-1;
 
 
 %%% Calculate Distances Between Points
-idxs1 = nchoosek(1:nStops,2);
+idxs1 = nchoosek(1:259,2);
 idxs1=[idxs1;idxs1(:,2),idxs1(:,1)]; 
 idxs=[];
 id=[];
 for p=1:nStops
     for w=1:nStops
+        if p~=w
 id=find(idxs1(:,1)==datanodes(p) & idxs1(:,2)==datanodes(w));
 idxs=[idxs;idxs1(id,:)];
+        end
 %id=find(idxs1(:,2)==datanodes(p) & idxs1(:,1)==datanodes(w)); 
 %idxs=[idxs;idxs1(id,:)];
     end
@@ -57,21 +70,18 @@ end
 
 f=[dist;zeros(2*nDLs,1)]; % concatenate f with zeros at the end to account for u at the end of x vector (length #nodes)
 
-% Aeq=zeros(2*nStops,nCombs+2*nDLs);
-% beq=zeros(2*nStops,1);
-% A=zeros(2*nDLs+nDLs^2,nCombs+2*nDLs);
-% b=zeros(2*nDLs+nDLs^2,1);
-Aeq=[];
-beq=[];
-A=[];
-b=[];
+Aeq=zeros(nDLs+2+lenactivecomps,nCombs+2*nDLs);
+beq=zeros(nDLs+2+lenactivecomps,1);
+A=zeros(5*nDLs+nDLs^2,nCombs+2*nDLs);
+b=zeros(5*nDLs+nDLs^2,1);
+
 
 %% Constraint 2
-Aeq(1,nCombs+2*nDLs)=zeros(1,nCombs+2*nDLs);
+%Aeq(1,nCombs+2*nDLs)=zeros(1,nCombs+2*nDLs);
 Aeq(1,find(idxs(:,1)==1))=ones(1,nDLs);
 beq(1)=m;
 %% Constraint 3
-Aeq(2,nCombs+2*nDLs)=zeros(1,nCombs+2*nDLs);
+%Aeq(2,nCombs+2*nDLs)=zeros(1,nCombs+2*nDLs);
 Aeq(2,find(idxs(:,2)==1))=ones(1,nDLs);
 beq(2)=m;
 
@@ -79,14 +89,14 @@ beq(2)=m;
 
 for j=2:nStops
     rowidxs=find(idxs(:,2)==datanodes(j));
-    A(j-1,nCombs+2*nDLs)=zeros(1,nCombs+2*nDLs);
+    %A(j-1,nCombs+2*nDLs)=zeros(1,nCombs+2*nDLs);
     A(j-1,rowidxs)=-1*ones(1,nDLs);
     b(j-1)=-1;
     
     rowidxs=find(idxs(:,2)==datanodes(j));
     rowidxs2=find(idxs(:,1)==datanodes(j));
     
-    Aeq(j+1,nCombs+2*nDLs)=zeros(1,nCombs+2*nDLs);
+    %Aeq(j+1,nCombs+2*nDLs)=zeros(1,nCombs+2*nDLs);
     Aeq(j+1,rowidxs)=ones(1,nDLs);
     Aeq(j+1,rowidxs2)=-1*ones(1,nDLs);
     beq(j+1)=0;    
@@ -96,7 +106,7 @@ end
 cnt=nStops;
 for i=2:nStops
     rowidxs=find(idxs(:,1)==datanodes(i));
-    A(cnt,nCombs+2*nDLs)=zeros(1,nCombs+2*nDLs);
+    %A(cnt,nCombs+2*nDLs)=zeros(1,nCombs+2*nDLs);
     A(cnt,rowidxs)=-1*ones(1,nDLs);
     b(cnt)=-1;
     cnt=cnt+1;
@@ -108,16 +118,16 @@ for i=2:nStops
     x1i=find(idxs(:,1)==1 & idxs(:,2)==datanodes(i));
     xi1=find(idxs(:,2)==1 & idxs(:,1)==datanodes(i));
     ui=nCombs+i-1;
-    A(cnt,nCombs+2*nDLs)=zeros(1,nCombs+2*nDLs);
+    %A(cnt,nCombs+2*nDLs)=zeros(1,nCombs+2*nDLs);
     A(cnt,[x1i,xi1,ui])=[L-2,-1,1];
     b(cnt)=L-1;
     cnt=cnt+1;
-    A(cnt,nCombs+2*nDLs)=zeros(1,nCombs+2*nDLs);
+    %A(cnt,nCombs+2*nDLs)=zeros(1,nCombs+2*nDLs);
     A(cnt,[x1i,xi1,ui])=[-1,K-2,-1];
     b(cnt)=-2;
     cnt=cnt+1;
     si=nCombs+nDLs+i-1;
-    A(cnt,nCombs+2*nDLs)=zeros(1,nCombs+2*nDLs);
+    %A(cnt,nCombs+2*nDLs)=zeros(1,nCombs+2*nDLs);
     A(cnt,[x1i,xi1,si])=[H-2,-1,1];
     b(cnt)=H-1;
     cnt=cnt+1;
@@ -137,11 +147,11 @@ for i=2:nStops
             uj=nCombs+j-1;
             si=nCombs+nDLs+i-1;
             sj=nCombs+nDLs+j-1; 
-            A(cnt,nCombs+2*nDLs)=zeros(1,nCombs+2*nDLs);
+            %A(cnt,nCombs+2*nDLs)=zeros(1,nCombs+2*nDLs);
             A(cnt,[xij,xji,ui,uj])=[L,L-2,1,-1]; % On March 11 changed from -2 to -1 for u_j
             b(cnt)=L-1;
             cnt=cnt+1;
-            A(cnt,nCombs+2*nDLs)=zeros(1,nCombs+2*nDLs);
+            %A(cnt,nCombs+2*nDLs)=zeros(1,nCombs+2*nDLs);
             A(cnt,[xij,xji,si,sj])=[H,H-2,1,-1]; % On March 11 changed from -2 to -1 for u_j
             b(cnt)=H-1;
             cnt=cnt+1;
@@ -149,7 +159,7 @@ for i=2:nStops
 
     end
     if DATA(1,i)==10000
-         Aeq(cnter,nCombs+2*nDLs)=zeros(1,nCombs+2*nDLs);
+         %Aeq(cnter,nCombs+2*nDLs)=zeros(1,nCombs+2*nDLs);
          Aeq(cnter,si)=1;
          beq(cnter)=0;
          cnter=cnter+1;
