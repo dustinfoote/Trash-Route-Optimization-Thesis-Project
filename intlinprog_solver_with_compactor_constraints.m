@@ -1,6 +1,6 @@
 clear;clc;
 m=4; %number of salemen/vehicles
-H=2; %number of DL stops b4 visiting compactor
+H=3; %number of DL stops b4 visiting compactor
 L=15;
 K=2;
 fullscale=0; % if problem is full scale, put 1, otherwise 0
@@ -16,7 +16,7 @@ compsData=compsData.DistComps;
 DATA=[DATA,[10000*ones(1,length(compsData(:,1)));compsData'];[10000*ones(length(compsData(:,1)),1),compsData],10000*ones(length(compsData(:,1)))-10000*eye(length(compsData(:,1)))];
 %LINE BELOW IS NEW
 if fullscale==0
-    datanodes=[1,randperm(238,20)+ones(1,20),248,254,251]; % row vector, must always start with node 1
+    datanodes=[1,randperm(238,20)+ones(1,20),248,254,251,242]; % row vector, must always start with node 1
     %datanodes=[1,56,100,13,231,88,99,200,66,44,133,156,180]; % row vector, must always start with node 1
     Long=Longitude(datanodes);
     Lat=Latitude(datanodes);
@@ -46,6 +46,7 @@ nDLs=nStops-1;
 %%% Calculate Distances Between Points
 idxs1 = nchoosek(1:259,2);
 idxs1=[idxs1;idxs1(:,2),idxs1(:,1)]; 
+if fullscale==0
 idxs=[];
 id=[];
 for p=1:nStops
@@ -57,6 +58,9 @@ idxs=[idxs;idxs1(id,:)];
 %id=find(idxs1(:,2)==datanodes(p) & idxs1(:,1)==datanodes(w)); 
 %idxs=[idxs;idxs1(id,:)];
     end
+end
+else
+    idxs=idxs1;
 end
 
 
