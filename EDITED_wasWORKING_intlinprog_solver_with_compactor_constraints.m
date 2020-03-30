@@ -1,7 +1,7 @@
 clear;clc;
-m=1; %number of salemen/vehicles
-H=3; %number of DL stops b4 visiting compactor
-L=20;
+m=3; %number of salemen/vehicles
+H=2; %number of DL stops b4 visiting compactor
+L=30;
 K=4;
 fullscale=0; % if problem is full scale, put 1, otherwise 0
 
@@ -20,7 +20,7 @@ DATA=[DATA,[10000*ones(1,length(compsData(:,1)));compsData'];[10000*ones(length(
 
 %LINE BELOW IS NEW
 if fullscale==0
-    datanodes=[1,randperm(238,7)+ones(1,7),248];%[1,139,214,73,88,103,232,249];% % row vector, must always start with node 1
+    datanodes=[1,randperm(238,12)+ones(1,12),249,241,255];%[1,139,214,73,88,103,232,249];% % row vector, must always start with node 1
     %datanodes=[1,56,100,13,231,88,99,200,66,44,133,156,180]; % row vector, must always start with node 1
     Long=Longitude(datanodes);
     Lat=Latitude(datanodes);
@@ -45,9 +45,10 @@ else
             compLong(count)=Longitude(datanodes(j));
             compLat(count)=Latitude(datanodes(j));
             count=count+1;
-    end
+        end
     
     lenactivecomps=length(activecomps);
+    end
 end
 %DATA=DATA([1,5,76,108,223],[1,5,76,108,223]);
 
@@ -93,15 +94,25 @@ A=zeros(5*nDLs+nDLs^2,nCombs+2*nDLs+floor((nDLs-lenactivecomps)/H));   %HERE
 b=zeros(5*nDLs+nDLs^2,1);
 
 
-%% Constraint 2
+%% Constraint 2 , 2.1
 %Aeq(1,nCombs+2*nDLs)=zeros(1,nCombs+2*nDLs);
 Aeq(1,find(idxs(:,1)==1))=ones(1,nDLs);
 beq(1)=m;
+
+% Constraints below prevent subtours but require number of travelers to =
+% number of compactors!
+count=2;
+% for i=1:lenactivecomps
+%     rowidx=find(idxs(:,1)==activecomps(i) & idxs(:,2)==1);
+%     Aeq(count,rowidx)=1;
+%     beq(count)=1;
+%     count=count+1;
+% end
 %% Constraint 3
 %Aeq(2,nCombs+2*nDLs)=zeros(1,nCombs+2*nDLs);
-Aeq(2,find(idxs(:,2)==1))=ones(1,nDLs);
-beq(2)=m;
-
+Aeq(count,find(idxs(:,2)==1))=ones(1,nDLs);
+beq(count)=m;
+count=count+1;
 %% Constraint 3.1, 4
 
 for j=2:nStops
@@ -114,9 +125,10 @@ for j=2:nStops
     rowidxs2=find(idxs(:,1)==datanodes(j));
     
     %Aeq(j+1,nCombs+2*nDLs)=zeros(1,nCombs+2*nDLs);
-    Aeq(j+1,rowidxs)=ones(1,nDLs);
-    Aeq(j+1,rowidxs2)=-1*ones(1,nDLs);
-    beq(j+1)=0;    
+    Aeq(count,rowidxs)=ones(1,nDLs);
+    Aeq(count,rowidxs2)=-1*ones(1,nDLs);
+    beq(count)=0; 
+    count=count+1;
 end
 
 %% Constraint 5
@@ -152,7 +164,7 @@ end
 
 
 %% Constraints 9, 9.1,9.2
-counter=2+nStops;
+%counter=2+nStops;
 for i=2:nStops
     for j=2:nStops
         if i==j
@@ -188,9 +200,9 @@ for i=2:nStops
     end
     if datanodes(i)>239
          %Aeq(cnter,nCombs+2*nDLs)=zeros(1,nCombs+2*nDLs);
-         Aeq(counter,si)=1;
-         beq(counter)=0;
-         counter=counter+1;
+         Aeq(count,si)=1;
+         beq(count)=0;
+         count=count+1;
     end
 end
 %% Constraint 8
